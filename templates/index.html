@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Social Media Profile Extraction</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      max-width: 700px;
+      margin: 0 auto 20px auto;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    }
+    form > div {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    .columns {
+      display: flex;
+      gap: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .column {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      overflow: auto;
+      max-height: 450px;
+    }
+    .column h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    ul {
+      list-style-type: disc;
+      padding-left: 20px;
+      margin: 5px 0 15px 0;
+    }
+    pre {
+      background: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 13px;
+      max-height: 150px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .status {
+      max-width: 700px;
+      margin: 15px auto;
+      font-weight: bold;
+      text-align: center;
+      font-size: 16px;
+    }
+    .summary-section {
+      max-width: 700px;
+      margin: 15px auto;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 250px;
+      overflow: auto;
+      font-size: 14px;
+    }
+    .summary-section h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>SBI Digital Tracker</h1>
+
+  <form id="start-form">
+    <div>
+      <label for="name">Actual Name</label>
+      <input type="text" id="name" name="name" required />
+    </div>
+    <div>
+      <label for="location">Last Known Location</label>
+      <input type="text" id="location" name="location" />
+    </div>
+    <div>
+      <label for="work">Last Known Work</label>
+      <input type="text" id="work" name="work" />
+    </div>
+    <div>
+      <label for="meta">Extra Metadata</label>
+      <input type="text" id="meta" name="meta" />
+    </div>
+    <div>
+      <label for="date">Current Date</label>
+      <input type="date" id="date" name="date" required />
+    </div>
+    <button type="submit" id="start-btn">Start Extraction</button>
+  </form>
+
+  <div class="status" id="status-text">Idle</div>
+
+  <!-- Summary Section -->
+  <div class="summary-section" id="summary-section" style="display:none;">
+    <h2>Summary</h2>
+    <pre id="summary-text">-</pre>
+  </div>
+
+  <div class="columns">
+    <div class="column" id="facebook-col">
+      <h2>Facebook</h2>
+      <div><strong>Selected ID:</strong> <span id="fb-id">-</span></div>
+      <div><strong>Reason:</strong> <span id="fb-reason">-</span></div>
+      <div><strong>Usernames:</strong></div>
+      <ul id="fb-usernames"></ul>
+      <div><strong>Extracted Profile Data:</strong></div>
+      <pre id="fb-profile-data">-</pre>
+    </div>
+
+    <div class="column" id="instagram-col">
+      <h2>Instagram</h2>
+      <div><strong>Selected ID:</strong> <span id="insta-id">-</span></div>
+      <div><strong>Reason:</strong> <span id="insta-reason">-</span></div>
+      <div><strong>Usernames:</strong></div>
+      <ul id="insta-usernames"></ul>
+      <div><strong>Extracted Profile Data:</strong></div>
+      <pre id="insta-profile-data">-</pre>
+    </div>
+
+    <div class="column" id="linkedin-col">
+      <h2>LinkedIn</h2>
+      <div><strong>Selected ID:</strong> <span id="ld-id">-</span></div>
+      <div><strong>Reason:</strong> <span id="ld-reason">-</span></div>
+      <div><strong>Usernames:</strong></div>
+      <ul id="ld-usernames"></ul>
+      <div><strong>Extracted Profile Data:</strong></div>
+      <pre id="ld-profile-data">-</pre>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('start-form');
+    const statusText = document.getElementById('status-text');
+    const startBtn = document.getElementById('start-btn');
+
+    // Facebook elements
+    const fbIdSpan = document.getElementById('fb-id');
+    const fbReasonSpan = document.getElementById('fb-reason');
+    const fbUsernamesUl = document.getElementById('fb-usernames');
+    const fbProfilePre = document.getElementById('fb-profile-data');
+
+    // Instagram elements
+    const instaIdSpan = document.getElementById('insta-id');
+    const instaReasonSpan = document.getElementById('insta-reason');
+    const instaUsernamesUl = document.getElementById('insta-usernames');
+    const instaProfilePre = document.getElementById('insta-profile-data');
+
+    // LinkedIn elements
+    const ldIdSpan = document.getElementById('ld-id');
+    const ldReasonSpan = document.getElementById('ld-reason');
+    const ldUsernamesUl = document.getElementById('ld-usernames');
+    const ldProfilePre = document.getElementById('ld-profile-data');
+
+    const summarySection = document.getElementById('summary-section');
+    const summaryPre = document.getElementById('summary-text');
+
+    let pollInterval = null;
+
+    function updateUsernamesList(ulElement, usernames) {
+      ulElement.innerHTML = '';
+      if (!usernames || usernames.length === 0) {
+        ulElement.innerHTML = '<li>-</li>';
+        return;
+      }
+      usernames.forEach(name => {
+        const li = document.createElement('li');
+        li.textContent = name;
+        ulElement.appendChild(li);
+      });
+    }
+
+    function prettyPrintJSON(obj) {
+      if (!obj) return "-";
+      try {
+        return JSON.stringify(obj, null, 2);
+      } catch {
+        return String(obj);
+      }
+    }
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/status');
+        if (!res.ok) throw new Error('Network response not ok');
+        return await res.json();
+      } catch (e) {
+        console.error('Error fetching status:', e);
+        return null;
+      }
+    }
+
+    function updateUI(status) {
+      if (!status) return;
+
+      // Facebook
+      fbIdSpan.textContent = status.fb_id || "-";
+      fbReasonSpan.textContent = status.fb_reason || "-";
+      updateUsernamesList(fbUsernamesUl, status.fb_username);
+      fbProfilePre.textContent = prettyPrintJSON(status.fb_profile_data);
+
+      // Instagram
+      instaIdSpan.textContent = status.insta_id || "-";
+      instaReasonSpan.textContent = status.insta_reason || "-";
+      updateUsernamesList(instaUsernamesUl, status.insta_username);
+      instaProfilePre.textContent = prettyPrintJSON(status.insta_profile_data);
+
+      // LinkedIn
+      ldIdSpan.textContent = status.ld_id || "-";
+      ldReasonSpan.textContent = status.ld_reason || "-";
+      updateUsernamesList(ldUsernamesUl, status.ld_username);
+      ldProfilePre.textContent = prettyPrintJSON(status.linkedin_profile_data);
+
+      // Summary
+      if(status.summary && status.summary !== null) {
+        summarySection.style.display = 'block';
+        summaryPre.textContent = status.summary;
+      } else {
+        summarySection.style.display = 'none';
+        summaryPre.textContent = '-';
+      }
+
+      // Summary & job status
+      if (status.done) {
+        statusText.textContent = 'Job completed!';
+        startBtn.disabled = false;
+        clearInterval(pollInterval);
+      } else {
+        statusText.textContent = 'Job running...';
+      }
+    }
+
+    async function startPolling() {
+      pollInterval = setInterval(async () => {
+        const status = await fetchStatus();
+        updateUI(status);
+      }, 2000);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      startBtn.disabled = true;
+      statusText.textContent = 'Starting job...';
+
+      const formData = new FormData(form);
+      const response = await fetch('/start', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        statusText.textContent = 'Job started, polling for updates...';
+        startPolling();
+      } else {
+        statusText.textContent = 'Failed to start job.';
+        startBtn.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
